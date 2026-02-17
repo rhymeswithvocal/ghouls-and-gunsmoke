@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Card Initiative Tracker</title>
+
+  <style>
+    :root{
+      --bg:#f3efe4; --ink:#1b1b1b; --muted:#5a564d;
+      --paper:#fffaf0; --line:#c9bfae;
+      --accent:#2f5e4e; --accent2:#7b3b2e;
+      --shadow: 0 10px 18px rgba(40,30,10,.18);
+      --radius:18px; --radius2:22px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --stamp: rgba(47,94,78,.12);
+    }
+    *{box-sizing:border-box}
+    body{
+  margin:0;
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 50% -200px,
+      rgba(0,0,0,.06) 0%,
+      transparent 60%
+    ),
+    radial-gradient(1200px 600px at 50% 120%,
+      rgba(0,0,0,.05) 0%,
+      transparent 65%
+    ),
+    var(--bg);
+  font-family: var(--serif);
+    }
+    header{
+      max-width:1200px; margin:0 auto; padding:22px 18px 12px;
+      display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    h1{margin:0; font-size:20px; letter-spacing:.2px}
+    .sub{margin-top:6px; color:var(--muted); font-size:13px; font-family:var(--sans)}
+    main{max-width:1200px; margin:0 auto; padding:0 18px 22px}
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.55));
+      border:1px solid var(--line);
+      border-radius:var(--radius2);
+      box-shadow:var(--shadow);
+    }
+    .controls{
+      padding:14px; display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
+      position:relative; overflow:hidden;
+    }
+    .controls::before{
+      content:""; position:absolute; inset:-40px -40px auto auto;
+      width:220px; height:220px; border-radius:999px; background:var(--stamp);
+      transform:rotate(10deg); pointer-events:none;
+    }
+    label{
+      display:block; font-size:12px; color:var(--muted); margin:0 0 6px;
+      font-family:var(--sans); letter-spacing:.2px;
+    }
+    input, select, textarea{
+      background:var(--paper); color:var(--ink);
+      border:1px solid var(--line); border-radius:14px;
+      padding:10px 10px; outline:none; min-width:140px;
+      font-family:var(--sans);
+    }
+    textarea{min-width:260px; resize:vertical; min-height:40px; max-height:180px}
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(47,94,78,.65);
+      box-shadow: 0 0 0 3px rgba(47,94,78,.12);
+    }
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    button{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(47,94,78,.18), rgba(47,94,78,.08));
+      color:var(--ink);
+      border-radius:16px; padding:10px 12px; cursor:pointer;
+      font-family:var(--sans); letter-spacing:.2px;
+    }
+    button:hover{filter:brightness(1.03)}
+    button.secondary{background: linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.02))}
+    button.danger{background: linear-gradient(180deg, rgba(123,59,46,.16), rgba(123,59,46,.08))}
+    .tiny{font-size:12px; color:var(--muted); font-family:var(--sans)}
+    .pill{
+      border:1px solid var(--line); background:rgba(255,255,255,.55);
+      padding:7px 10px; border-radius:999px; font-size:12px;
+      color:var(--ink); font-family:var(--mono);
+    }
+    .footerBar{
+      margin-top:14px; padding:12px 14px; display:flex; gap:10px;
+      align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    .grid{margin-top:14px; display:grid; grid-template-columns:1fr; gap:12px}
+    @media (min-width:900px){ .grid{grid-template-columns:1fr 1fr;} }
+    .tile{
+      padding:14px; position:relative; overflow:hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.62));
+      border-radius:var(--radius);
+    }
+    .tile.is-active{
+  border: 4px solid rgba(236, 119, 9, 0.65);
+  box-shadow:
+    0 14px 26px rgba(40,30,10,.20),
+    0 0 0 4px rgba(196, 136, 30, 0.1);
+  background:
+    linear-gradient(180deg, rgba(225, 82, 16, 0.1), rgba(255,255,255,.62));
+    }
+    .tile.is-down{
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(1, 1, 1, 0.22));
+    }
+    .tile::after{
+      content:""; position:absolute; inset:auto -30px -30px auto;
+      width:170px; height:170px; border-radius:999px; background:rgba(123,59,46,.08);
+      transform:rotate(-8deg); pointer-events:none;
+    }
+    .tileHeader{
+      display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+      position:relative; z-index:1;
+    }
+    .nameLine{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+    .name{font-size:16px; font-weight:700; letter-spacing:.2px}
+    .badge{
+      font-family:var(--mono); font-size:12px; padding:4px 8px;
+      background:rgba(255,255,255,.55); border:1px solid var(--line);
+      border-radius:999px; color:var(--ink);
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        cursor:pointer;
+    }
+    .badge.turn{border-color: rgba(47,94,78,.7); background: rgba(47,94,78,.12)}
+    .badge.down{border-color: rgba(123,59,46,.55); background: rgba(123,59,46,.10)}
+    .badge-check{
+    width:14px;
+    height:14px;
+    accent-color: rgba(47,94,78,.8);
+    margin:0;
+    }
+    .badge input[type="checkbox"]{
+  margin:0;
+  padding:0;
+  width:14px;
+  height:14px;
+}
+    .toggle-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+}
+
+.toggle-badge .box{
+  width:12px;
+  height:12px;
+  border:1px solid var(--muted);
+  border-radius:3px;
+  background:white;
+}
+
+.toggle-badge[data-checked="true"] .box{
+  background: var(--accent);
+  border-color: var(--accent);
+}
+    .actions{display:flex; gap:8px; align-items:center}
+    .actions button{padding:8px 10px; border-radius:14px}
+    .fields{
+      display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;
+      position:relative; z-index:1;
+    }
+    .full{grid-column:1 / -1}
+    .chips{display:flex; flex-wrap:wrap; gap:8px}
+    .chip{
+      background:rgba(255,255,255,.55); border:1px solid var(--line); border-radius:999px;
+      padding:6px 10px; font-size:12px; color:var(--ink); font-family:var(--sans);
+      display:flex; gap:8px; align-items:center;
+    }
+    .chip button{
+      padding:0; border:none; background:transparent; color:var(--muted);
+      cursor:pointer; font-size:14px; line-height:1;
+    }
+
+    /* Pips (0..10) */
+    .pipsWrap{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+    .pips{
+      display:flex; gap:6px; flex-wrap:wrap; align-items:center;
+      padding:8px 10px;
+      background:rgba(255,255,255,.45);
+      border:1px solid var(--line);
+      border-radius:16px;
+    }
+    .pip{
+      width:18px; height:18px;
+      border-radius:999px;
+      border:1px solid rgba(90,86,77,.65);
+      background: rgba(255,255,255,.55);
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: rgba(90,86,77,.9);
+      user-select:none;
+    }
+    .pip.on{
+      background: rgba(47,94,78,.22);
+      border-color: rgba(47,94,78,.65);
+      color: rgba(47,94,78,.95);
+    }
+    .pip.dangerOn{
+      background: rgba(123,59,46,.18);
+      border-color: rgba(123,59,46,.55);
+      color: rgba(123,59,46,.9);
+    }
+    .pip:active{transform: translateY(1px)}
+    .pipLabel{
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      min-width: 78px;
+      text-align:right;
+    }
+    .muted{color:var(--muted)}
+    .mono{font-family:var(--mono)}
+
+    .controls::before, .tile::after { display:none; }
+
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <h1>Ghouls & Gunsmoke Initiative Tracker</h1>
+      <div class="sub">Deal a card. Click pips. Keep it moving.</div>
+    </div>
+    <div class="tiny">Tie-break: <span class="mono">Rank ↓ then Suit ↓ (♠ &gt; ♥ &gt; ♦ &gt; ♣)</span></div>
+  </header>
+
+  <main>
+    <section class="panel controls">
+      <div class="row" style="flex:1; min-width:280px;">
+        <div>
+          <label>Name</label>
+          <input id="newName" placeholder="e.g., Roark / Goblin 2" />
+        </div>
+
+        <div>
+          <label>Initiative Card</label>
+          <div class="row">
+            <select id="newRank" aria-label="Rank"></select>
+            <select id="newSuit" aria-label="Suit"></select>
+          </div>
+        </div>
+
+        <div>
+          <label>Step (1–10)</label>
+          <div id="newStepPips"></div>
+        </div>
+
+        <div>
+          <label>Wounds (0–10, default 3)</label>
+          <div id="newWoundsPips"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="addBtn">Add Tile</button>
+        <button id="drawBtn" class="secondary">Draw Card</button>
+        <button id="resetDeckBtn" class="secondary">Reset Deck</button>
+        <button id="clearBtn" class="danger">Clear All</button>
+      </div>
+    </section>
+
+    <section class="panel footerBar">
+      <div class="row">
+        <button id="prevTurn" class="secondary">← Prev</button>
+        <button id="nextTurn" class="secondary">Next →</button>
+        <span class="pill">Turn: <span id="turnLabel">—</span></span>
+        <span class="pill">Deck: <span id="deckLabel">52</span> left</span>
+      </div>
+      <div class="tiny muted">Cards are fixed once set. Delete/re-add to change a card.</div>
+    </section>
+
+    <section id="grid" class="grid"></section>
+  </main>
+
+<script>
+/** ========= CONFIG ========= **/
+const RANKS = ["A","K","Q","J","10","9","8","7","6","5","4","3","2"];
+const SUITS = [
+  { key:"S", label:"Spades ♠" },
+  { key:"H", label:"Hearts ♥" },
+  { key:"D", label:"Diamonds ♦" },
+  { key:"C", label:"Clubs ♣" },
+];
+
+const STORAGE_KEY = "card_initiative_tracker_v4_no_max_wounds";
+
+/* Defaults */
+const DEFAULT_WOUNDS = 3;
+const DEFAULT_STEP = 1;
+
+/** ========= STATE ========= **/
+let state = loadState() ?? {
+  combatants: [],
+  turnIndex: 0,
+  deck: freshDeck(),
+};
+
+/** draft values for new tile **/
+let draft = { step: DEFAULT_STEP, wounds: DEFAULT_WOUNDS };
+
+function freshDeck(){
+  const deck = [];
+  for (const r of RANKS){
+    for (const s of SUITS){
+      deck.push({ rank:r, suit:s.key });
+    }
+  }
+  return shuffle(deck);
+}
+function shuffle(arr){
+  const a = [...arr];
+  for (let i=a.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed.combatants) return null;
+    if (!parsed.deck) parsed.deck = freshDeck();
+    if (typeof parsed.turnIndex !== "number") parsed.turnIndex = 0;
+
+    // migration: if older data had maxWounds, ignore it
+    parsed.combatants = parsed.combatants.map(c => ({
+      ...c,
+      wounds: clamp0to10(c.wounds ?? DEFAULT_WOUNDS),
+      step: clamp0to10(c.step ?? DEFAULT_STEP),
+    }));
+
+    return parsed;
+  }catch{ return null; }
+}
+function uid(){ return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16); }
+
+/** ========= CARD SORT ========= **/
+const rankValue = Object.fromEntries(RANKS.map((r,i)=>[r, RANKS.length - i]));
+const suitValue = Object.fromEntries(SUITS.map((s,i)=>[s.key, SUITS.length - i]));
+function compareCards(a,b){
+  const ra = rankValue[a.rank] ?? 0;
+  const rb = rankValue[b.rank] ?? 0;
+  if (ra !== rb) return rb - ra;
+  const sa = suitValue[a.suit] ?? 0;
+  const sb = suitValue[b.suit] ?? 0;
+  return sb - sa;
+}
+function cardToText(card){
+  const suitSymbol = {S:"♠",H:"♥",D:"♦",C:"♣"}[card.suit] ?? "?";
+  return `${card.rank}${suitSymbol}`;
+}
+
+/** ========= UI ========= **/
+const $ = (id)=>document.getElementById(id);
+
+function populateSelects(){
+  $("newRank").innerHTML = RANKS.map(r=>`<option value="${r}">${r}</option>`).join("");
+  $("newSuit").innerHTML = SUITS.map(s=>`<option value="${s.key}">${s.label}</option>`).join("");
+  $("newRank").value = "A";
+  $("newSuit").value = "S";
+}
+populateSelects();
+
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function clamp0to10(n){
+  const v = Number(n);
+  if (!Number.isFinite(v)) return 0;
+  return Math.max(0, Math.min(10, v));
+}
+
+function pipsControl({label, value, onSet, dangerThreshold=null, min=0, max=10}){
+  const wrap = document.createElement("div");
+  wrap.className = "pipsWrap";
+
+  const lab = document.createElement("div");
+  lab.className = "pipLabel";
+  lab.textContent = `${label}: ${value}`;
+  wrap.appendChild(lab);
+
+  const bar = document.createElement("div");
+  bar.className = "pips";
+
+  for (let i=min; i<=10; i++){
+    const b = document.createElement("div");
+    let cls = "pip";
+    if (i <= value) cls += " on";
+    if (dangerThreshold != null && i <= value && value <= dangerThreshold){
+      cls = "pip" + (i <= value ? " dangerOn" : "");
+    }
+    b.className = cls;
+    b.title = String(i);
+    b.textContent = (i === 0) ? "0" : "";
+    b.addEventListener("click", ()=> onSet(i));
+    bar.appendChild(b);
+  }
+
+  wrap.appendChild(bar);
+  return wrap;
+}
+
+function renderDraftPips(){
+  const stepHost = $("newStepPips");
+  const woundsHost = $("newWoundsPips");
+  stepHost.innerHTML = "";
+  woundsHost.innerHTML = "";
+
+  stepHost.appendChild(
+    pipsControl({
+      label:"Step",
+      value:draft.step,
+      min:1,
+      max:10,
+      onSet:(v)=>{ draft.step = v; renderDraftPips(); }
+    })
+  );
+
+  woundsHost.appendChild(
+    pipsControl({
+      label:"Wounds",
+      value:draft.wounds,
+      dangerThreshold: 1,
+      onSet:(v)=>{ draft.wounds = v; renderDraftPips(); }
+    })
+  );
+}
+renderDraftPips();
+
+/** controls */
+$("addBtn").addEventListener("click", ()=>{
+  const name = $("newName").value.trim();
+  if (!name) return alert("Name required.");
+
+  const rank = $("newRank").value;
+  const suit = $("newSuit").value;
+
+  state.combatants.push({
+    id: uid(),
+    name,
+    card: { rank, suit },
+    step: clamp0to10(draft.step),
+    wounds: clamp0to10(draft.wounds),
+    statuses: [],
+    notes: "",
+  });
+
+  $("newName").value = "";
+
+  // keep step; reset wounds default
+  draft.wounds = DEFAULT_WOUNDS;
+  renderDraftPips();
+
+  sortCombatants();
+  clampTurnIndex();
+  saveState();
+  render();
+});
+
+$("drawBtn").addEventListener("click", ()=>{
+  if (state.deck.length === 0) return alert("Deck is empty. Reset it.");
+  const card = state.deck.pop();
+  $("newRank").value = card.rank;
+  $("newSuit").value = card.suit;
+  saveState();
+  render();
+});
+
+$("resetDeckBtn").addEventListener("click", ()=>{
+  state.deck = freshDeck();
+  saveState();
+  render();
+});
+
+$("clearBtn").addEventListener("click", ()=>{
+  if (!confirm("Clear ALL tiles?")) return;
+  state.combatants = [];
+  state.turnIndex = 0;
+  saveState();
+  render();
+});
+
+$("prevTurn").addEventListener("click", ()=>{
+  if (state.combatants.length === 0) return;
+  state.turnIndex = (state.turnIndex - 1 + state.combatants.length) % state.combatants.length;
+  saveState();
+  render();
+});
+
+$("nextTurn").addEventListener("click", ()=>{
+  if (state.combatants.length === 0) return;
+  state.turnIndex = (state.turnIndex + 1) % state.combatants.length;
+  saveState();
+  render();
+});
+
+/** sorting */
+function sortCombatants(){ state.combatants.sort((x,y)=> compareCards(x.card, y.card)); }
+function clampTurnIndex(){
+  if (state.combatants.length === 0){ state.turnIndex = 0; return; }
+  if (state.turnIndex < 0) state.turnIndex = 0;
+  if (state.turnIndex >= state.combatants.length) state.turnIndex = state.combatants.length - 1;
+}
+
+/** ========= TILE RENDER ========= **/
+function render(){
+  sortCombatants();
+  clampTurnIndex();
+
+  $("deckLabel").textContent = String(state.deck.length);
+  $("turnLabel").textContent = state.combatants[state.turnIndex]?.name ?? "—";
+
+  const grid = $("grid");
+  grid.innerHTML = "";
+
+  state.combatants.forEach((c, idx)=>{
+    const isTurn = idx === state.turnIndex;
+    const down = (c.wounds != null && c.wounds <= 0);
+
+    const tile = document.createElement("div");
+    tile.className = "panel tile" + (isTurn ? " is-active" : "") + (down ? " is-down" : "");
+    tile.innerHTML = `
+      <div class="tileHeader">
+        <div>
+          <div class="nameLine">
+            <span class="name">${escapeHtml(c.name)}</span>
+            <span class="badge">${escapeHtml(cardToText(c.card))}</span>
+            ${down ? `<span class="badge toggle-badge" data-checked="false">
+  <span class="box"></span>
+  Stable?
+</span>` : ``}
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="secondary" data-action="setTurn" data-id="${c.id}">Set Turn</button>
+          <button class="danger" data-action="delete" data-id="${c.id}">Delete</button>
+        </div>
+      </div>
+
+      <div class="fields">
+        <div class="full" data-pips-host="step" data-id="${c.id}"></div>
+        <div class="full" data-pips-host="wounds" data-id="${c.id}"></div>
+
+        <div class="full">
+          <label>Status Effects</label>
+          <div class="chips">
+            ${(c.statuses ?? []).map((s,i)=>`
+              <span class="chip">
+                ${escapeHtml(s)}
+                <button data-action="removeStatus" data-id="${c.id}" data-index="${i}" title="Remove">×</button>
+              </span>
+            `).join("")}
+          </div>
+          <div class="row" style="margin-top:8px">
+            <input placeholder="e.g., Prone, Bleeding" data-field="statusDraft" data-id="${c.id}" />
+            <button class="secondary" data-action="addStatus" data-id="${c.id}">Add</button>
+          </div>
+        </div>
+
+        <div class="full">
+          <label>Notes</label>
+          <textarea data-field="notes" data-id="${c.id}" placeholder="What matters right now…">${escapeHtml(c.notes ?? "")}</textarea>
+        </div>
+      </div>
+    `;
+    grid.appendChild(tile);
+  });
+
+  // mount pips controls
+  document.querySelectorAll('[data-pips-host="step"]').forEach(host=>{
+    const id = host.getAttribute("data-id");
+    const c = state.combatants.find(x=>x.id === id);
+    if (!c) return;
+    host.innerHTML = "";
+    const lab = document.createElement("label");
+    lab.textContent = "Step (0–10)";
+    host.appendChild(lab);
+    host.appendChild(
+      pipsControl({
+        label:"Step",
+        value: clamp0to10(c.step ?? 0),
+        onSet:(v)=>{ c.step = v; saveState(); render(); }
+      })
+    );
+  });
+
+  document.querySelectorAll('[data-pips-host="wounds"]').forEach(host=>{
+    const id = host.getAttribute("data-id");
+    const c = state.combatants.find(x=>x.id === id);
+    if (!c) return;
+    host.innerHTML = "";
+    const lab = document.createElement("label");
+    lab.textContent = "Wounds (0–10)";
+    host.appendChild(lab);
+    host.appendChild(
+      pipsControl({
+        label:"Wounds",
+        value: clamp0to10(c.wounds ?? DEFAULT_WOUNDS),
+        dangerThreshold: 1,
+        onSet:(v)=>{ c.wounds = v; saveState(); render(); }
+      })
+    );
+  });
+
+  wireEvents();
+}
+
+function wireEvents(){
+  document.querySelectorAll("[data-field]").forEach(el=>{
+    el.addEventListener("input", ()=>{
+      const field = el.getAttribute("data-field");
+      const id = el.getAttribute("data-id");
+      const c = state.combatants.find(x=>x.id === id);
+      if (!c) return;
+
+      if (field === "notes") c.notes = el.value;
+      saveState();
+    });
+  });
+
+  document.querySelectorAll("[data-action]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const action = btn.getAttribute("data-action");
+      const id = btn.getAttribute("data-id");
+
+      if (action === "delete"){
+        state.combatants = state.combatants.filter(x=>x.id !== id);
+        clampTurnIndex();
+        saveState();
+        render();
+        return;
+      }
+
+      if (action === "setTurn"){
+        const idx = state.combatants.findIndex(x=>x.id === id);
+        if (idx >= 0) state.turnIndex = idx;
+        saveState();
+        render();
+        return;
+      }
+
+      if (action === "addStatus"){
+        const c = state.combatants.find(x=>x.id === id);
+        if (!c) return;
+        const draftInput = document.querySelector(`input[data-field="statusDraft"][data-id="${id}"]`);
+        const text = (draftInput?.value ?? "").trim();
+        if (!text) return;
+        c.statuses = c.statuses ?? [];
+        c.statuses.push(text);
+        if (draftInput) draftInput.value = "";
+        saveState();
+        render();
+        return;
+      }
+
+      if (action === "removeStatus"){
+        const c = state.combatants.find(x=>x.id === id);
+        if (!c) return;
+        const i = Number(btn.getAttribute("data-index"));
+        if (!Number.isFinite(i)) return;
+        c.statuses.splice(i, 1);
+        saveState();
+        render();
+        return;
+      }
+    });
+  });
+}
+
+/** ========= BOOT ========= **/
+render();
+</script>
+</body>
+</html>
